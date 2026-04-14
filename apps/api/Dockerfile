@@ -1,47 +1,42 @@
-# HireTrack API — Dockerfile
-# Multi-stage build: compile TypeScript → run slim production image
+# Multi-stage build — runs from REPO ROOT (monorepo context)
+# Render: set Root Directory to EMPTY (repo root), use Docker runtime
 
 # ── Stage 1: Build ─────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files and install ALL deps (including devDeps for tsc)
-COPY package*.json ./
-COPY tsconfig*.json ./
-RUN npm ci
+# Copy root workspace manifest first
+COPY package.json package-lock.json ./
 
-# Copy source and compile
-COPY src/ ./src/
-COPY prisma/ ./prisma/
+# Copy only the API app
+COPY apps/api ./apps/api
 
-# Generate Prisma client
-RUN npx prisma generate
+# Install deps from repo root (resolves workspace packages correctly)
+RUN npm install --prefix apps/api
 
-# Compile TypeScript → dist/
-RUN npx nest build
+# Generate Prisma client (resolves to apps/api/node_modules)
+RUN cd apps/api && npx prisma generate
+
+# Compile TypeScript
+RUN cd apps/api && npx tsc -p tsconfig.build.json
 
 # ── Stage 2: Production Runtime ────────────────────────────────
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
-WORKDIR /app
+WORKDIR /app/apps/api
 
 ENV NODE_ENV=production
 
-# Copy package files and install PRODUCTION deps only
-COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# Copy compiled output from builder
+COPY --from=builder /app/apps/api/dist ./dist
+COPY --from=builder /app/apps/api/node_modules ./node_modules
+COPY --from=builder /app/apps/api/prisma ./prisma
+COPY --from=builder /app/apps/api/package.json ./package.json
 
-# Copy compiled output and Prisma client from builder
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY prisma/ ./prisma/
-
-# Create uploads directory (used for resume attachments until S3 migration)
+# Uploads dir for local fallback
 RUN mkdir -p uploads/resumes uploads/attachments
 
 EXPOSE 4000
 
-# Run database migrations then start the server
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]

@@ -14,12 +14,10 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync, mkdirSync, createReadStream, unlinkSync } from 'fs';
+import { memoryStorage } from 'multer';
 import { Response } from 'express';
-import { randomUUID } from 'crypto';
 import { ApplicationService } from './application.service';
+import { StorageService } from '../storage/storage.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   IsString,
@@ -220,12 +218,15 @@ class AddContactDto {
   notes?: string;
 }
 
-const UPLOAD_DIR = join(process.cwd(), 'uploads', 'attachments');
+const UPLOAD_DIR_UNUSED = ''; // kept for reference only — storage handled by StorageService
 
 @Controller('applications')
 @UseGuards(JwtAuthGuard)
 export class ApplicationController {
-  constructor(private readonly applicationService: ApplicationService) {}
+  constructor(
+    private readonly applicationService: ApplicationService,
+    private readonly storage: StorageService,
+  ) {}
 
   @Get('archived')
   findArchived(@Req() req: any) {
@@ -418,16 +419,7 @@ export class ApplicationController {
   @Post(':id/attachments')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (_req, _file, cb) => {
-          if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true });
-          cb(null, UPLOAD_DIR);
-        },
-        filename: (_req, file, cb) => {
-          const uniqueName = `${randomUUID()}${extname(file.originalname)}`;
-          cb(null, uniqueName);
-        },
-      }),
+      storage: memoryStorage(),         // buffer → passes to StorageService
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
     }),
   )
@@ -436,10 +428,17 @@ export class ApplicationController {
     @UploadedFile() file: Express.Multer.File,
     @Req() req: any,
   ) {
+    const result = await this.storage.upload(
+      file.buffer,
+      file.originalname,
+      file.mimetype,
+      'attachments',
+    );
+
     return this.applicationService.addAttachment(id, req.user.sub, {
       fileName: file.originalname,
-      fileUrl: file.filename,
-      fileSize: file.size,
+      fileUrl: result.key,    // R2 key or local filename
+      fileSize: result.fileSize,
       fileType: file.mimetype,
     });
   }
@@ -455,12 +454,19 @@ export class ApplicationController {
     const attachment = app.attachments?.find((a: any) => a.id === attachId);
     if (!attachment) throw new Error('Attachment not found');
 
-    const filePath = join(UPLOAD_DIR, attachment.fileUrl);
-    if (!existsSync(filePath)) throw new Error('File not found on disk');
+    if (this.storage.isUsingR2) {
+      // Redirect browser to a fresh 7-day presigned R2 URL
+      const url = await this.storage.getSignedDownloadUrl(attachment.fileUrl);
+      return res.redirect(url);
+    }
+
+    // Local disk fallback
+    const stream = this.storage.getLocalReadStream(attachment.fileUrl);
+    if (!stream) throw new Error('File not found on disk');
 
     res.setHeader('Content-Disposition', `attachment; filename="${attachment.fileName}"`);
     res.setHeader('Content-Type', attachment.fileType);
-    createReadStream(filePath).pipe(res);
+    stream.pipe(res);
   }
 
   @Delete(':id/attachments/:attachId')
@@ -470,11 +476,7 @@ export class ApplicationController {
     @Req() req: any,
   ) {
     const result = await this.applicationService.removeAttachment(id, attachId, req.user.sub);
-    // Delete file from disk
-    try {
-      const filePath = join(UPLOAD_DIR, result.fileUrl);
-      if (existsSync(filePath)) unlinkSync(filePath);
-    } catch {}
+    await this.storage.delete(result.fileUrl);
     return { success: true };
   }
 }
