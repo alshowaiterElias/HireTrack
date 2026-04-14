@@ -6,29 +6,10 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { ResumeService } from './resume.service';
+import { StorageService } from '../storage/storage.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { IsString, IsOptional } from 'class-validator';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync } from 'fs';
-import { randomUUID } from 'crypto';
-
-// Configure multer for local storage
-const uploadDir = join(process.cwd(), 'uploads', 'resumes');
-
-const storage = diskStorage({
-  destination: (_req, _file, cb) => {
-    const fs = require('fs');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (_req, file, cb) => {
-    const uniqueName = `${randomUUID()}${extname(file.originalname)}`;
-    cb(null, uniqueName);
-  },
-});
+import { memoryStorage } from 'multer';
 
 const fileFilter = (_req: any, file: any, cb: any) => {
   const allowed = [
@@ -52,7 +33,10 @@ class UpdateResumeDto {
 @Controller('resumes')
 @UseGuards(JwtAuthGuard)
 export class ResumeController {
-  constructor(private readonly resumeService: ResumeService) {}
+  constructor(
+    private readonly resumeService: ResumeService,
+    private readonly storage: StorageService,
+  ) {}
 
   @Get()
   async findAll(@Req() req: any) {
@@ -72,21 +56,29 @@ export class ResumeController {
   @Get(':id/download')
   async download(@Param('id') id: string, @Req() req: any, @Res() res: Response) {
     const resume = await this.resumeService.findOne(id, req.user.sub);
-    const filePath = join(uploadDir, resume.fileUrl);
 
-    if (!existsSync(filePath)) {
+    if (this.storage.isUsingR2) {
+      // Generate a fresh presigned URL and redirect the browser to it
+      const url = await this.storage.getSignedDownloadUrl(resume.fileUrl);
+      return res.redirect(url);
+    }
+
+    // Local disk fallback
+    const stream = this.storage.getLocalReadStream(resume.fileUrl);
+    if (!stream) {
       throw new BadRequestException('File not found on server');
     }
 
     res.setHeader('Content-Disposition', `attachment; filename="${resume.fileName}"`);
     res.setHeader('Content-Type', 'application/octet-stream');
-    res.sendFile(filePath);
+    stream.pipe(res);
   }
 
   @Post('upload')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage,
+      // Use memoryStorage so we get a Buffer — works for R2 and local disk
+      storage: memoryStorage(),
       fileFilter,
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
     }),
@@ -99,17 +91,23 @@ export class ResumeController {
     if (!file) {
       throw new BadRequestException('File is required');
     }
-
     if (!label || !label.trim()) {
       throw new BadRequestException('Label is required');
     }
 
+    const result = await this.storage.upload(
+      file.buffer,
+      file.originalname,
+      file.mimetype,
+      'resumes',
+    );
+
     return this.resumeService.create({
       userId: req.user.sub,
       label: label.trim(),
-      fileUrl: file.filename, // just the filename, stored in uploads/resumes/
+      fileUrl: result.key,   // R2 key or local filename
       fileName: file.originalname,
-      fileSize: file.size,
+      fileSize: result.fileSize,
     });
   }
 
@@ -120,6 +118,9 @@ export class ResumeController {
 
   @Delete(':id')
   async delete(@Param('id') id: string, @Req() req: any) {
+    const resume = await this.resumeService.findOne(id, req.user.sub);
+    // Clean up the file from R2/local disk
+    await this.storage.delete(resume.fileUrl);
     return this.resumeService.delete(id, req.user.sub);
   }
 }

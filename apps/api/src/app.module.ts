@@ -13,6 +13,7 @@ import { ResumeModule } from './resume/resume.module';
 import { EmailTemplateModule } from './email-template/email-template.module';
 import { AiModule } from './ai/ai.module';
 import { JobDescriptionModule } from './job-description/job-description.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { JobDescriptionModule } from './job-description/job-description.module';
     EmailTemplateModule,
     AiModule,
     JobDescriptionModule,
+    StorageModule,
   ],
   providers: [
     {

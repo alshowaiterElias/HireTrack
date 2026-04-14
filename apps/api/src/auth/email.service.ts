@@ -7,18 +7,20 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private readonly resend: Resend | null = null;
   private readonly fromEmail: string;
-  private readonly appUrl: string;
+  private readonly apiKey: string | undefined;
 
   constructor(private readonly config: ConfigService) {
-    const apiKey = this.config.get<string>('RESEND_API_KEY');
-    this.fromEmail = this.config.get<string>('FROM_EMAIL') || 'HireTrack <noreply@hiretrack.app>';
-    this.appUrl = this.config.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    this.apiKey = this.config.get<string>('RESEND_API_KEY');
+    this.fromEmail =
+      this.config.get<string>('FROM_EMAIL') || 'HireTrack <onboarding@resend.dev>';
 
-    if (apiKey) {
-      this.resend = new Resend(apiKey);
-      this.logger.log('✅ Email service initialized with Resend');
+    if (!this.apiKey || this.apiKey === 're_PASTE_YOUR_KEY_HERE') {
+      this.logger.warn(
+        '⚠️  RESEND_API_KEY not set or still placeholder — emails will be logged to console only',
+      );
     } else {
-      this.logger.warn('⚠️  RESEND_API_KEY not set — emails will be logged to console only');
+      this.resend = new Resend(this.apiKey);
+      this.logger.log(`✅ Email service initialized with Resend (from: ${this.fromEmail})`);
     }
   }
 
@@ -26,44 +28,71 @@ export class EmailService {
     const subject = 'Your HireTrack verification code';
 
     if (!this.resend) {
-      // Dev fallback — log to console
-      this.logger.log(`[DEV EMAIL] To: ${email} | Subject: ${subject} | Code: ${code}`);
+      // Dev fallback — print code directly so devs can still test
+      this.logger.log(`\n╔════════════════════════════════════════╗`);
+      this.logger.log(`║  [DEV] VERIFICATION CODE`);
+      this.logger.log(`║  To:   ${email}`);
+      this.logger.log(`║  Code: ${code}`);
+      this.logger.log(`╚════════════════════════════════════════╝\n`);
       return;
     }
 
-    try {
-      await this.resend.emails.send({
-        from: this.fromEmail,
-        to: email,
-        subject,
-        html: this.verificationEmailHtml(code),
-      });
-      this.logger.log(`Verification email sent to ${email}`);
-    } catch (err) {
-      this.logger.error(`Failed to send verification email to ${email}:`, err);
-      // Don't throw — the code is already saved in DB, user can try again
+    this.logger.log(`📧 Sending verification email to ${email}...`);
+    this.logger.debug(`   from: ${this.fromEmail}, subject: "${subject}"`);
+
+    // ⚠️ Resend SDK returns { data, error } — it does NOT throw on API failure
+    const { data, error } = await this.resend.emails.send({
+      from: this.fromEmail,
+      to: email,
+      subject,
+      html: this.verificationEmailHtml(code),
+    });
+
+    if (error) {
+      this.logger.error(`❌ Resend API error sending verification to ${email}:`);
+      this.logger.error(`   Code: ${(error as any).statusCode ?? 'unknown'}`);
+      this.logger.error(`   Message: ${error.message}`);
+      this.logger.error(`   Name: ${error.name}`);
+      // Log the code as fallback so the user isn't locked out
+      this.logger.warn(`   [FALLBACK] Verification code for ${email}: ${code}`);
+      return;
     }
+
+    this.logger.log(`✅ Verification email delivered to ${email} — Resend ID: ${data?.id}`);
   }
 
   async sendPasswordReset(email: string, code: string): Promise<void> {
     const subject = 'Reset your HireTrack password';
 
     if (!this.resend) {
-      this.logger.log(`[DEV EMAIL] To: ${email} | Subject: ${subject} | Code: ${code}`);
+      this.logger.log(`\n╔════════════════════════════════════════╗`);
+      this.logger.log(`║  [DEV] PASSWORD RESET CODE`);
+      this.logger.log(`║  To:   ${email}`);
+      this.logger.log(`║  Code: ${code}`);
+      this.logger.log(`╚════════════════════════════════════════╝\n`);
       return;
     }
 
-    try {
-      await this.resend.emails.send({
-        from: this.fromEmail,
-        to: email,
-        subject,
-        html: this.passwordResetEmailHtml(code),
-      });
-      this.logger.log(`Password reset email sent to ${email}`);
-    } catch (err) {
-      this.logger.error(`Failed to send password reset email to ${email}:`, err);
+    this.logger.log(`📧 Sending password reset email to ${email}...`);
+    this.logger.debug(`   from: ${this.fromEmail}, subject: "${subject}"`);
+
+    const { data, error } = await this.resend.emails.send({
+      from: this.fromEmail,
+      to: email,
+      subject,
+      html: this.passwordResetEmailHtml(code),
+    });
+
+    if (error) {
+      this.logger.error(`❌ Resend API error sending password reset to ${email}:`);
+      this.logger.error(`   Code: ${(error as any).statusCode ?? 'unknown'}`);
+      this.logger.error(`   Message: ${error.message}`);
+      this.logger.error(`   Name: ${error.name}`);
+      this.logger.warn(`   [FALLBACK] Password reset code for ${email}: ${code}`);
+      return;
     }
+
+    this.logger.log(`✅ Password reset email delivered to ${email} — Resend ID: ${data?.id}`);
   }
 
   // ─── Email Templates ────────────────────────────────────────────
