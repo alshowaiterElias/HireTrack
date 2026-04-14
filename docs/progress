@@ -1,0 +1,322 @@
+# HireTrack — Progress Tracker
+
+> Based on [implementation_plan.md](file:///d:/Project%20Z/hiretrack/docs/implementation_plan.md)
+
+---
+
+## Phase 1: Foundation (Weeks 1-2)
+
+### Monorepo & Infrastructure
+- [x] Turborepo monorepo setup (`apps/web`, `apps/api`, `packages/`)
+- [x] Shared TypeScript config
+- [x] Shared ESLint config
+- [x] `turbo.json` task pipeline
+- [ ] CI/CD pipeline (GitHub Actions → Vercel + Railway)
+
+### Frontend Foundation
+- [x] Next.js 16 (App Router) with React 19
+- [x] Design system — `globals.css` with complete token set (colors, spacing, typography, animations)
+- [x] Inter font from Google Fonts
+- [x] Dark theme (primary)
+- [ ] Light theme toggle
+- [x] Responsive layout primitives (`.btn`, `.card`, `.input`, `.badge`)
+- [x] Custom scrollbar styling
+- [x] SEO metadata configured
+
+### Backend Foundation
+- [x] NestJS 11 scaffold with TypeScript
+- [x] Prisma ORM with PostgreSQL
+- [x] 15 models + 9 enums in schema (+ ColumnType, JobDescription model, AI integration)
+- [x] Global Prisma module
+- [x] Security: Helmet, CORS, rate limiting, validation pipes
+- [x] API prefix `/api/v1`
+- [ ] Environment variable validation (Zod at startup)
+
+### Authentication
+- [x] NextAuth v5 (next-auth@beta) integrated
+- [x] Google OAuth provider configured
+- [x] GitHub OAuth provider configured
+- [x] Email + Verification Code (OTP) provider
+- [x] JWT session strategy (15min access / 7-day refresh)
+- [x] Auth secret configured with dev fallback
+- [x] Login page (premium dark UI)
+- [x] Signup mode (`/login?mode=signup`)
+- [x] OTP verification page (`/verify`) with 6-digit input
+- [x] Session provider wrapping app
+- [x] Route protection on dashboard (redirect to /login)
+- [x] Sign out functionality
+
+### Landing Page
+- [x] Hero section with gradient text + animated badge
+- [x] Interactive Kanban board preview
+- [x] Stats section
+- [x] 6 feature cards with hover animations
+- [x] CTA section with glow effect
+- [x] Footer
+- [x] All buttons connected to auth pages
+- [x] Sticky navbar with glassmorphism
+
+### Backend API Modules
+- [x] Auth module (JWT strategy, guards, login, send-code, verify-code, refresh, profile)
+- [x] Campaign module (CRUD + column management)
+- [x] Application module (CRUD + move, archive, notes, contacts, tags, attachments)
+- [x] Reminder module (CRUD + application linking)
+- [x] Notification module (CRUD + read/unread)
+- [x] Analytics module (funnel, activity, sources, momentum, time-in-stage, salary)
+- [x] Resume module (upload, link, list)
+- [x] AI module (OpenAI GPT-4.1 nano for JD analysis + keyword extraction)
+- [x] Job Description module (CRUD, search, archive, PDF export, reanalyze)
+- [ ] Import/Export module (CSV, PDF)
+
+
+## Phase 2: Core Board (Weeks 2-3)
+
+### Campaign Management
+- [x] Campaign CRUD on frontend (create, list, edit, delete)
+- [x] Campaign selector in sidebar (dynamic, API-driven)
+- [x] Campaign creation modal with all DB fields (name, goal, targetRole, salary, currency, endDate, weeklyGoal)
+- [x] Backend: Campaign CRUD API endpoints
+
+### Board View
+- [x] Board page with 6 default columns (Kanban layout)
+- [x] Column headers with dot color + name + count
+- [x] Add application modal with all DB fields (salary, resume link, cover letter, JD, tags)
+- [x] **Drag-and-drop** between columns (@dnd-kit/core + useDroppable)
+- [x] Drag reorder within column
+- [x] Column CRUD (add, rename, reorder, color, delete) — settings dropdown per column
+- [x] Column WIP limits (visual warning: yellow at limit-1, red at/over limit)
+
+### Application Cards
+- [x] Card layout with company, role, priority indicator, source, tags, resume badge, notes/contacts count
+- [x] Card click navigates to full **Application Detail Page** (`/dashboard/application/[id]`)
+- [x] Application Detail Page with:
+  - [x] General details (read-only view + edit modal)
+  - [x] Status timeline with timestamps
+  - [x] Notes CRUD (typed: General, Interview Prep, Feedback, Post-Interview)
+  - [x] Contacts CRUD (name, role, email, LinkedIn, phone, notes)
+  - [x] Attachments (upload, download, delete)
+  - [x] Resume linking (dropdown of uploaded resumes)
+  - [x] Archive / unarchive toggle
+  - [x] Tags (add/remove with color)
+- [x] Priority indicator (🔴🟡🟢)
+- [x] Source channel badge
+- [x] Applied date auto-set when moved to "Applied" column (via columnType, not name)
+- [x] Interview date prompt when moved to "Interview" column (with auto-reminder)
+- [x] Offer deadline prompt when moved to "Offer" column (with auto-reminder)
+- [x] Backend: Application CRUD API endpoints
+- [x] Backend: Move endpoint
+- [x] Backend: Archive endpoint
+- [x] Backend: Tag add/remove endpoints
+- [x] Backend: Attachment upload/download/delete endpoints
+- [x] Backend: Note delete endpoint
+- [x] Backend: Contact delete endpoint
+- [x] Backend: Get all applications endpoint (for dropdowns)
+
+### Tags System
+- [x] Tag add/remove in application detail page
+- [ ] Tag filter on board
+- [ ] Color picker for tags
+
+### Notes & Contacts
+- [x] Notes section in application detail page (timestamped, typed)
+- [x] Interview prep notes (via note type selector)
+- [x] Contact management per application (name, email, LinkedIn, phone, role, notes)
+- [x] Backend: Notes and Contacts endpoints (create + delete)
+
+---
+
+## Phase 3: Intelligence Layer (Weeks 3-4)
+
+### Job Description Vault
+- [x] JobDescription database model (persistent, independent of applications)
+- [x] Full JD text storage when creating card (auto-creates JD record)
+- [x] AI-powered keyword extraction (skills, experience, education, certifications)
+- [x] AI-powered JD restructuring into professional markdown format
+- [x] JD search across all applications (company, role, content, skills)
+- [x] Highlight key requirements (keyword badges: skills, experience, education)
+- [x] PDF export of JD (PDFKit with professional layout)
+- [x] Re-analyze JD with AI button
+- [x] Archive/unarchive JDs independently
+- [x] Vault page accessible from sidebar
+- [x] Vault quick action on dashboard home
+- [x] AI-Powered JD Vault feature on landing page
+- [x] Archived Applications tab in Vault (unarchive from there)
+
+### Archived Applications Hub
+- [x] GET /applications/archived endpoint
+- [x] Archived apps tab in Vault page
+- [x] Unarchive from Vault
+- [x] Archive count in dashboard overview
+
+### Smart Reminders Engine
+- [x] Reminders page (full UI with type filters + create form)
+- [x] Reminder creation with application linking dropdown
+- [x] Display linked application on reminder cards
+- [x] Auto-generated follow-up reminders (7 days after apply → APPLIED column)
+- [x] Auto-generated thank-you reminders (1 day after phone screen → PHONE_SCREEN column)
+- [x] Auto-generated interview prep reminders (2 days before interview → INTERVIEW column with date)
+- [x] Auto-generated offer deadline reminders (1 day before → OFFER column with deadline)
+- [x] Auto-generated stale card reminders (14 days no activity, resets on column change)
+- [x] Backend: Auto-reminder generation via ReminderService (synchronous on card move/create)
+- [ ] Backend: BullMQ scheduled job engine for periodic stale card scanning (future enhancement)
+
+### Follow-up Email Templates
+- [x] Templates page with 3 pre-built templates (Follow-up, Thank You, Networking)
+- [x] Template preview panel
+- [x] Variable substitution ({company}, {contact}, {role})
+- [x] Copy-to-clipboard with one click
+- [x] User custom template CRUD (save to DB)
+- [x] Backend: EmailTemplate CRUD endpoints
+
+### Resume Version Manager
+- [x] Resumes page with upload form + drag-and-drop
+- [x] File upload to local storage (apps/api/uploads/)
+- [x] Resume list with labels and download
+- [x] Link resume version to application card (in add form + detail page)
+- [ ] Response rate per resume version
+- [x] Backend: Resume module
+
+---
+
+## Phase 4: Analytics & Insights (Weeks 4-5)
+
+- [x] Analytics page (full redesign with real data-driven charts)
+- [x] **Conversion funnel** horizontal bar chart (pure CSS)
+- [x] **Weekly activity** vertical bar chart (12 weeks)
+- [x] **Source channel performance** bar chart with response rates
+- [x] **Resume version performance** comparison table
+- [x] **Momentum Score** SVG gauge with breakdown bars
+- [x] Average time-in-stage timeline chart
+- [x] Salary distribution range bars
+- [x] Overview stat cards (total, interviews, offers, rejected, campaigns, archived)
+- [x] Backend: getTimeInStage analytics endpoint
+- [x] Backend: getSalaryDistribution analytics endpoint
+- [x] Backend: Improved overview with columnType-based queries
+
+### Database Seeding
+- [x] Comprehensive seed script (prisma/seed.ts)
+- [x] Demo user (demo@hiretrack.app / Demo1234!)
+- [x] 2 campaigns (Active + Completed) with themed columns
+- [x] 17 applications across all pipeline stages
+- [x] 21 realistic status changes with timestamps
+- [x] 6 notes (general, interview prep, feedback)
+- [x] 7 contacts with roles and emails
+- [x] 8 reminders (various types, some dismissed)
+- [x] 4 notifications
+- [x] 3 resume versions, 3 email templates
+- [x] 14 tags
+- [x] 1 archived application
+- [x] 9 JD records with full text
+
+---
+
+## Phase 5: Browser Extension (Weeks 5-6)
+
+- [x] Manifest V3 setup with TypeScript + Webpack 5 build pipeline
+- [x] Popup UI — dark theme, 4-view state machine (auth / no-job / form / success)
+- [x] Content script — LinkedIn parser (multi-selector fallbacks for title, company, location, work type, description, salary)
+- [x] Content script — YemenHR parser (confirmed live selectors: h1, a[href*='/organizations/'], a[href*='/locations/'])
+- [x] Content script — HireTrack token bridge (postMessage auth flow from settings page)
+- [x] Background service worker (token storage, badge updates on job detection)
+- [x] API integration (campaign/column picker, create application, duplicate detection)
+- [x] Duplicate detection (GET /applications?jobUrl= endpoint + warning banner in popup)
+- [x] Settings page: "Connect Extension" / "Disconnect" with live connection indicator
+- [x] Backend: ApplicationSource.YEMENHR added to enum + DB migration
+- [x] Both auth flows: popup login form + web app "Connect Extension" button
+- [x] API URL configurable in popup settings panel (dev → production URL ready)
+- [x] Extension built to dist/ — load via chrome://extensions → Load unpacked
+- [ ] Real extension icons (128px, 48px, 16px) — placeholder PNGs in place
+- [ ] Chrome Web Store submission (Phase 6 milestone)
+---
+
+## Phase 6: Polish & Production (Weeks 6-7)
+
+- [] Weekly Strategy Digest email (BullMQ + Resend)
+- [x] Data export (CSV + PDF report)
+- [x] Account deletion (GDPR)
+- [x] PWA manifest + service worker
+- [x] Dark theme
+- [x] Light theme toggle
+- [x] Arabic Language Support For UI.
+- [x] Comprehensive error handling + loading states
+- [x] Rate limiting + input validation
+- [x] Performance optimization (lazy loading, virtualization for large boards)
+
+---
+
+## Phase 7: Testing & Launch (Weeks 7-8)
+
+- [ ] Unit tests (Vitest — services, utils, hooks)
+- [ ] E2E tests (Playwright — critical flows)
+- [ ] Security audit (OWASP top 10)
+- [ ] Performance testing (Lighthouse > 90)
+- [ ] Staging deployment
+- [ ] Production deployment (Vercel + Railway)
+- [ ] Chrome Web Store submission
+- [ ] Product Hunt launch prep
+
+---
+
+## Summary
+
+| Phase | Status | Completion |
+|-------|--------|-----------|
+| Phase 1: Foundation | ✅ Complete | ~92% |
+| Phase 2: Core Board | ✅ Complete | ~85% |
+| Phase 3: Intelligence | ✅ Complete | ~90% |
+| Phase 4: Analytics | ✅ Complete | ~85% |
+| Phase 5: Extension | ⬜ Not Started | 0% |
+| Phase 6: Polish | 🟡 Started | ~20% |
+| Phase 7: Testing | ⬜ Not Started | 0% |
+
+### Immediate Next Steps (Priority Order)
+1. **Set OPENROUTER_API_KEY** in apps/api/.env for AI-powered JD analysis
+2. **Set up OAuth credentials** (Google + GitHub) — see instructions above
+3. **Browser Extension** — Phase 5 (LinkedIn auto-fill)
+4. **Auto-reminders** — BullMQ scheduled job engine
+5. **Light theme toggle**
+
+### Files Structure Created
+```
+apps/web/
+├── app/
+│   ├── page.tsx                    ← Landing page
+│   ├── login/page.tsx              ← Login / Signup
+│   ├── verify/page.tsx             ← OTP verification
+│   ├── api/auth/[...nextauth]/     ← NextAuth API route
+│   ├── (dashboard)/
+│   │   ├── layout.tsx              ← Protected dashboard shell + campaign modal
+│   │   ├── dashboard.css           ← Sidebar + header styles
+│   │   └── dashboard/
+│   │       ├── page.tsx + page.css  ← Dashboard home
+│   │       ├── board/[id]/          ← Kanban board with DnD
+│   │       ├── application/[id]/    ← Application detail page (NEW)
+│   │       ├── analytics/           ← Analytics (redesigned with charts)
+│   │       ├── vault/               ← JD Vault + Archived Apps
+│   │       ├── resumes/             ← Resume manager
+│   │       ├── reminders/           ← Reminders + app linking
+│   │       ├── templates/           ← Email templates
+│   │       └── settings/            ← User settings
+│   └── providers.tsx               ← SessionProvider
+├── components/
+│   └── ConfirmModal.tsx            ← Themed confirmation modal
+├── auth.ts                         ← NextAuth config
+├── lib/api.ts                      ← API client (all endpoints)
+└── globals.css                     ← Design system
+
+apps/api/
+├── prisma/schema.prisma            ← 16 models + 9 enums
+├── prisma/seed.ts                  ← Comprehensive demo seed script
+└── src/
+    ├── ai/                         ← AI module (OpenAI GPT-4.1 nano)
+    ├── auth/                       ← Auth module (OAuth + Email OTP)
+    ├── campaign/                   ← Campaign CRUD
+    ├── application/                ← Application CRUD + tags + attachments
+    ├── job-description/            ← JD Vault (CRUD + search + PDF export)
+    ├── reminder/                   ← Reminder CRUD + app linking
+    ├── notification/               ← Notifications
+    ├── resume/                     ← Resume upload/list
+    ├── analytics/                  ← Analytics queries (+ time-in-stage, salary)
+    ├── email-template/             ← Email template CRUD
+    └── prisma/                     ← Prisma service
+```

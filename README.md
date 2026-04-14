@@ -1,159 +1,244 @@
-# Turborepo starter
+# HireTrack
 
-This Turborepo starter is maintained by the Turborepo core team.
+**HireTrack** is a full-stack job search management platform built as a monorepo. It gives job seekers a command center to track every application, visualize their pipeline, analyze performance data, export reports, and stay organized through the entire hiring process.
 
-## Using this example
+---
 
-Run the following command:
+## Features
 
-```sh
-npx create-turbo@latest
+### Core Dashboard
+- **Kanban Board** — drag-and-drop applications across fully customizable pipeline stages
+- **Application Detail** — status tracking, notes, interview dates, salary, and contact info per application
+- **Multiple Campaigns** — separate job searches (e.g., "Remote Roles", "Local Companies")
+
+### Analytics
+- Conversion funnel by pipeline stage
+- Weekly activity chart (last 12 weeks)
+- Source performance with response rates
+- Average time spent in each stage
+- Resume performance comparison
+- Salary range distribution
+- Momentum score (weighted activity metric)
+- **Export as PDF** — branded, multi-page analytics report
+- **Export as CSV** — all applications as a spreadsheet (Excel-compatible with UTF-8 BOM)
+
+### JD Vault
+- Save job descriptions from LinkedIn and YemenHR using the Chrome extension
+- AI-powered keyword extraction (skills, experience, education)
+- Full-text search, archive, and PDF export per JD
+
+### Resumes
+- Upload and manage multiple resume versions
+- Track which resume was used per application
+- Response rate analysis per resume
+
+### Reminders & Notifications
+- Manual and auto-generated reminders on stage changes
+- In-app notification center with read/unread status
+
+### Email Templates
+- Reusable templates for follow-ups, thank-you notes, and networking
+- Variable substitution (`{role}`, `{company}`, `{contact}`)
+
+### Internationalization
+- Full Arabic language support for all UI elements
+- RTL layout: sidebar repositions to the right automatically
+
+### Settings
+- Profile editing (name, timezone)
+- Weekly digest toggle
+- Light / Dark theme with localStorage persistence and anti-flash
+- Language selector (English / Arabic)
+- Data export (CSV)
+- Account deletion (GDPR-compliant, cascades all data)
+
+### Browser Extension
+- Detects job postings on LinkedIn and YemenHR
+- One-click save to HireTrack with pre-filled company, role, location, and URL
+- Persistent background connection to the web app session
+
+---
+
+## Tech Stack
+
+### Monorepo
+| Tool | Purpose |
+|------|---------|
+| [Turborepo](https://turbo.build) | Monorepo task orchestration |
+| TypeScript | End-to-end type safety |
+
+### Frontend (`apps/web`)
+| Tool | Purpose |
+|------|---------|
+| Next.js 16 | React framework with App Router |
+| NextAuth v5 | Authentication (Google, GitHub, Email OTP) |
+| @dnd-kit | Accessible drag-and-drop for the Kanban board |
+| Vanilla CSS | Custom design system with CSS variables |
+| `@ducanh2912/next-pwa` | Service worker + PWA manifest |
+
+### Backend (`apps/api`)
+| Tool | Purpose |
+|------|---------|
+| NestJS 11 | Modular REST API framework |
+| Prisma | ORM with type-safe DB access |
+| PostgreSQL | Primary database |
+| PDFKit | PDF generation (JD export + analytics report) |
+| Resend | Transactional email (OTP + password reset) |
+| Helmet + Throttler | Security headers and rate limiting |
+| OpenRouter (OpenAI API) | AI-powered JD keyword extraction |
+
+### Browser Extension (`apps/extension`)
+| Tool | Purpose |
+|------|---------|
+| Manifest V3 | Chrome extension platform |
+| Content scripts | DOM scraping for LinkedIn and YemenHR |
+
+---
+
+## Project Structure
+
+```
+hiretrack/
+├── apps/
+│   ├── api/              # NestJS REST API
+│   │   ├── src/
+│   │   │   ├── auth/         # JWT auth, OTP, OAuth, password reset
+│   │   │   ├── application/  # CRUD + CSV export
+│   │   │   ├── analytics/    # 8 analytics endpoints + PDF report
+│   │   │   ├── campaign/     # Campaigns + columns
+│   │   │   ├── reminder/     # Reminders + auto-generate
+│   │   │   ├── resume/       # File upload + performance
+│   │   │   ├── job-description/ # JD vault + AI analysis + PDF
+│   │   │   └── ...
+│   │   ├── prisma/           # Schema + migrations
+│   │   ├── Dockerfile        # Multi-stage production image
+│   │   └── railway.toml      # Railway deployment config
+│   │
+│   ├── web/              # Next.js frontend
+│   │   ├── app/
+│   │   │   ├── (dashboard)/  # Protected dashboard routes
+│   │   │   ├── login/        # Login + OTP verify
+│   │   │   └── page.tsx      # Landing page
+│   │   ├── lib/
+│   │   │   ├── api.ts        # Typed API client
+│   │   │   └── i18n/         # English + Arabic translations
+│   │   └── public/           # PWA manifest + icons
+│   │
+│   └── extension/        # Chrome extension (Manifest V3)
+│
+├── packages/             # Shared ESLint + TypeScript configs
+└── turbo.json
 ```
 
-## What's inside?
+---
 
-This Turborepo includes the following packages/apps:
+## Getting Started
 
-### Apps and Packages
+### Prerequisites
+- Node.js 20+
+- PostgreSQL (local or [Neon](https://neon.tech) free tier)
+- npm 10+
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### 1. Clone & Install
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+git clone https://github.com/YOUR_USERNAME/hiretrack.git
+cd hiretrack
+npm install
 ```
 
-Without global `turbo`, use your package manager:
+### 2. Configure Environment Variables
 
-```sh
-cd my-turborepo
-npx turbo build
-npm dlx turbo build
-npm exec turbo build
+**API** — copy and fill in `apps/api/.env`:
+```bash
+DATABASE_URL="postgresql://user:pass@localhost:5432/hiretrack"
+JWT_SECRET="your-64-char-random-string"
+JWT_REFRESH_SECRET="another-64-char-random-string"
+FRONTEND_URL="http://localhost:3000"
+PORT=4000
+
+# Optional: email (Resend)
+RESEND_API_KEY="re_your_key_here"
+FROM_EMAIL="HireTrack <noreply@yourdomain.com>"
+
+# Optional: AI analysis
+OPENROUTER_API_KEY="sk-or-..."
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+**Web** — copy and fill in `apps/web/.env.local`:
+```bash
+AUTH_SECRET="your-nextauth-secret"
+NEXTAUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_API_URL="http://localhost:4000/api/v1"
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
 ```
 
-Without global `turbo`:
+### 3. Set Up the Database
 
-```sh
-npx turbo build --filter=docs
-npm exec turbo build --filter=docs
-npm exec turbo build --filter=docs
+```bash
+cd apps/api
+npx prisma migrate dev
+npx prisma generate
 ```
 
-### Develop
+### 4. Run the Development Servers
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+```bash
+# From the repo root — starts API + Web in parallel
+npm run dev
 ```
 
-Without global `turbo`, use your package manager:
+Or individually:
+```bash
+# API only
+cd apps/api && npm run start:dev
 
-```sh
-cd my-turborepo
-npx turbo dev
-npm exec turbo dev
-npm exec turbo dev
+# Web only
+cd apps/web && npm run dev
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+### 5. Load the Browser Extension
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+1. Build the extension (if needed): the `/apps/extension` folder is already in Manifest V3 format
+2. Open Chrome → `chrome://extensions`
+3. Enable **Developer mode**
+4. Click **Load unpacked** → select `apps/extension`
 
-```sh
-turbo dev --filter=web
-```
+---
 
-Without global `turbo`:
+## Deployment
 
-```sh
-npx turbo dev --filter=web
-npm exec turbo dev --filter=web
-npm exec turbo dev --filter=web
-```
+> See the full deployment guide in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
-### Remote Caching
+| Service | Provider |
+|---------|----------|
+| Frontend | Firebase App Hosting / Vercel |
+| API | Railway |
+| Database | Supabase (PostgreSQL) |
+| Email | Resend |
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+---
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+## API Endpoints
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/v1/auth/register` | Email registration |
+| `POST` | `/api/v1/auth/send-code` | Send OTP |
+| `POST` | `/api/v1/auth/verify-code` | Verify OTP |
+| `POST` | `/api/v1/auth/email-login` | Login with password |
+| `GET` | `/api/v1/applications` | List all applications |
+| `GET` | `/api/v1/applications/export/csv` | Download CSV export |
+| `GET` | `/api/v1/analytics/overview` | Aggregated stats |
+| `GET` | `/api/v1/analytics/export/pdf` | Download PDF report |
+| `GET` | `/api/v1/health` | Health check |
+| … | | Full route list in each module's controller |
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+---
 
-```sh
-cd my-turborepo
-turbo login
-```
+## License
 
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-npm exec turbo login
-npm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-npm exec turbo link
-npm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+MIT — free to use, modify, and distribute.

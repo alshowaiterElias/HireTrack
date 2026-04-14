@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HireTrack</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- ─── Header ────────────────────────────────────────────── -->
+  <header class="ht-header">
+    <div class="ht-brand">
+      <span class="ht-logo">🎯</span>
+      <span class="ht-name">HireTrack</span>
+    </div>
+    <div class="ht-header-right">
+      <div id="connection-dot" class="conn-dot conn-dot--off" title="Not connected"></div>
+      <button id="settings-toggle" class="icon-btn" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <!-- ─── Settings Panel ────────────────────────────────────── -->
+  <div id="settings-panel" class="settings-panel hidden">
+    <p class="panel-label">API Base URL</p>
+    <div class="input-row">
+      <input id="api-url-input" type="text" class="ht-input" placeholder="http://localhost:4000" />
+      <button id="api-url-save" class="btn btn-sm">Save</button>
+    </div>
+    <div id="toast-api" class="toast hidden">✓ Saved</div>
+    <hr class="divider" />
+    <button id="disconnect-btn" class="btn btn-danger btn-sm btn-full">Disconnect Account</button>
+  </div>
+
+  <!-- ─── Auth View ──────────────────────────────────────────── -->
+  <div id="auth-view" class="view hidden">
+    <div class="connect-hero">
+      <div class="hero-icon">🔌</div>
+      <h2>Connect HireTrack</h2>
+      <p>Sign in to save jobs with one click.</p>
+    </div>
+
+    <form id="login-form" class="auth-form" autocomplete="on">
+      <div class="form-group">
+        <label class="form-label" for="login-email">Email</label>
+        <input id="login-email" type="email" class="ht-input" placeholder="you@example.com" required autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="login-password">Password</label>
+        <input id="login-password" type="password" class="ht-input" placeholder="••••••••" required autocomplete="current-password" />
+      </div>
+      <div id="login-error" class="error-msg hidden"></div>
+      <button id="login-btn" type="submit" class="btn btn-primary btn-full">Sign In</button>
+    </form>
+
+    <p class="auth-hint">
+      Already connected via web app?<br/>
+      <a id="open-web-link" href="#" class="link">Open HireTrack settings →</a>
+    </p>
+  </div>
+
+  <!-- ─── No Job View ───────────────────────────────────────── -->
+  <div id="no-job-view" class="view hidden">
+    <div class="no-job-state">
+      <div class="no-job-icon">🔍</div>
+      <h3>No Job Detected</h3>
+      <p>Navigate to a job posting on one of the supported sites:</p>
+      <div class="supported-sites">
+        <span class="site-badge site-linkedin">🔵 linkedin.com/jobs</span>
+        <span class="site-badge site-yemenhr">🟡 yemenhr.com/jobs</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Main Form View ───────────────────────────────────── -->
+  <div id="main-view" class="view hidden">
+
+    <!-- Duplicate Warning -->
+    <div id="duplicate-banner" class="dup-banner hidden">
+      <span>⚠️ Already tracked</span>
+      <a id="dup-link" href="#" class="dup-link">View Application →</a>
+    </div>
+
+    <form id="save-form" novalidate>
+
+      <!-- Source badge + URL -->
+      <div class="source-row">
+        <span id="source-badge" class="source-badge"></span>
+        <span id="url-display" class="url-display"></span>
+      </div>
+      <input id="job-url-hidden" type="hidden" />
+
+      <!-- Role Title -->
+      <div class="form-group">
+        <label class="form-label" for="role-title">Role Title</label>
+        <input id="role-title" type="text" class="ht-input" placeholder="Software Engineer" required />
+      </div>
+
+      <!-- Company -->
+      <div class="form-group">
+        <label class="form-label" for="company-name">Company</label>
+        <input id="company-name" type="text" class="ht-input" placeholder="Acme Corp" required />
+      </div>
+
+      <!-- Location -->
+      <div class="form-group">
+        <label class="form-label" for="location-input">Location</label>
+        <input id="location-input" type="text" class="ht-input" placeholder="Remote, Aden..." />
+      </div>
+
+      <!-- Work Type -->
+      <div class="form-group">
+        <label class="form-label" for="work-type">Work Type</label>
+        <select id="work-type" class="ht-select">
+          <option value="">— Not specified —</option>
+          <option value="REMOTE">🌐 Remote</option>
+          <option value="HYBRID">🔀 Hybrid</option>
+          <option value="ONSITE">🏢 On-site</option>
+        </select>
+      </div>
+
+      <!-- Salary (collapsible) -->
+      <details class="salary-group">
+        <summary class="salary-summary">💰 Salary (optional)</summary>
+        <div class="salary-row">
+          <input id="salary-min" type="number" class="ht-input" placeholder="Min" min="0" />
+          <span class="salary-sep">–</span>
+          <input id="salary-max" type="number" class="ht-input" placeholder="Max" min="0" />
+        </div>
+      </details>
+
+      <!-- Deadline badge (YemenHR only) -->
+      <div id="deadline-badge" class="deadline-badge hidden"></div>
+
+      <hr class="divider" />
+
+      <!-- Campaign -->
+      <div class="form-group">
+        <label class="form-label" for="campaign-select">Campaign</label>
+        <select id="campaign-select" class="ht-select" required>
+          <option value="">Loading campaigns…</option>
+        </select>
+      </div>
+
+      <!-- Column -->
+      <div class="form-group">
+        <label class="form-label" for="column-select">Column</label>
+        <select id="column-select" class="ht-select" required>
+          <option value="">Select campaign first…</option>
+        </select>
+      </div>
+
+      <!-- Priority -->
+      <div class="form-group">
+        <label class="form-label" for="priority-select">Priority</label>
+        <select id="priority-select" class="ht-select">
+          <option value="MEDIUM">🟡 Medium</option>
+          <option value="HIGH">🔴 High</option>
+          <option value="LOW">🟢 Low</option>
+        </select>
+      </div>
+
+      <div id="save-error" class="error-msg hidden"></div>
+
+      <button id="save-btn" type="submit" class="btn btn-primary btn-full btn-save">
+        ✓ Save to HireTrack
+      </button>
+    </form>
+  </div>
+
+  <!-- ─── Success View ──────────────────────────────────────── -->
+  <div id="success-view" class="view hidden">
+    <div class="success-state">
+      <div class="success-anim">✅</div>
+      <h3>Saved!</h3>
+      <p id="success-desc">Application added to your board.</p>
+      <button id="view-app-btn" class="btn btn-secondary btn-full">View Application →</button>
+      <button id="save-another-btn" class="btn btn-ghost btn-full">⟵ Save Another</button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

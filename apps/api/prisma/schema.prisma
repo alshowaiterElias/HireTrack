@@ -1,0 +1,368 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Enums
+// ============================================
+
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum WorkType {
+  REMOTE
+  HYBRID
+  ONSITE
+}
+
+enum ApplicationSource {
+  LINKEDIN
+  INDEED
+  GLASSDOOR
+  ANGELLIST
+  COMPANY_SITE
+  REFERRAL
+  RECRUITER
+  YEMENHR
+  OTHER
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum NoteType {
+  GENERAL
+  INTERVIEW_PREP
+  FEEDBACK
+  POST_INTERVIEW
+}
+
+enum ReminderType {
+  FOLLOW_UP
+  INTERVIEW_PREP
+  OFFER_DEADLINE
+  STALE_CARD
+  THANK_YOU
+  CUSTOM
+}
+
+enum ColumnType {
+  CUSTOM
+  SAVED
+  APPLIED
+  PHONE_SCREEN
+  INTERVIEW
+  OFFER
+  REJECTED
+}
+
+// ============================================
+// Models
+// ============================================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String?
+  name          String?
+  avatarUrl     String?
+  oauthProvider String?
+  oauthId       String?
+  timezone      String   @default("UTC")
+  digestEnabled Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  campaigns       Campaign[]
+  resumeVersions  ResumeVersion[]
+  notifications   Notification[]
+  emailTemplates  EmailTemplate[]
+  reminders       Reminder[]
+  jobDescriptions JobDescription[]
+
+  @@map("users")
+}
+
+model Campaign {
+  id            String         @id @default(cuid())
+  userId        String
+  name          String
+  goal          String?
+  targetRole    String?
+  salaryMin     Decimal?       @db.Decimal(12, 2)
+  salaryMax     Decimal?       @db.Decimal(12, 2)
+  currency      String         @default("USD")
+  startDate     DateTime       @default(now())
+  targetEndDate DateTime?
+  weeklyGoal    Int            @default(10)
+  status        CampaignStatus @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  columns Column[]
+
+  @@index([userId])
+  @@map("campaigns")
+}
+
+model Column {
+  id         String     @id @default(cuid())
+  campaignId String
+  name       String
+  color      String     @default("#6366f1")
+  position   Int
+  wipLimit   Int?
+  isDefault  Boolean    @default(false)
+  columnType ColumnType @default(CUSTOM)
+
+  campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@index([campaignId])
+  @@map("columns")
+}
+
+model Application {
+  id              String            @id @default(cuid())
+  columnId        String
+  companyName     String
+  companyLogoUrl  String?
+  roleTitle       String
+  jobUrl          String?
+  jobDescription  String?
+  location        String?
+  workType        WorkType?
+  salaryMin       Decimal?          @db.Decimal(12, 2)
+  salaryMax       Decimal?          @db.Decimal(12, 2)
+  currency        String            @default("USD")
+  source          ApplicationSource?
+  appliedDate     DateTime?
+  priority        Priority          @default(MEDIUM)
+  resumeVersionId String?
+  coverLetter     String?
+  interviewDate   DateTime?
+  offerDeadline   DateTime?
+  position        Int
+  isArchived      Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  column        Column         @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  resumeVersion ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+  contacts      Contact[]
+  notes         Note[]
+  tags          ApplicationTag[]
+  statusChanges StatusChange[]
+  reminders     Reminder[]
+  attachments   Attachment[]
+  jdRecord      JobDescription?
+
+  @@index([columnId])
+  @@index([resumeVersionId])
+  @@index([isArchived])
+  @@map("applications")
+}
+
+model Contact {
+  id            String @id @default(cuid())
+  applicationId String
+  name          String
+  role          String?
+  email         String?
+  linkedinUrl   String?
+  phone         String?
+  notes         String?
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("contacts")
+}
+
+model Note {
+  id            String   @id @default(cuid())
+  applicationId String
+  content       String
+  type          NoteType @default(GENERAL)
+  createdAt     DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("notes")
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+  color String @default("#6366f1")
+
+  applications ApplicationTag[]
+
+  @@map("tags")
+}
+
+model ApplicationTag {
+  applicationId String
+  tagId         String
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  tag         Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([applicationId, tagId])
+  @@map("application_tags")
+}
+
+model StatusChange {
+  id            String   @id @default(cuid())
+  applicationId String
+  fromColumn    String
+  toColumn      String
+  changedAt     DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("status_changes")
+}
+
+model ResumeVersion {
+  id        String   @id @default(cuid())
+  userId    String
+  label     String
+  fileUrl   String
+  fileName  String
+  fileSize  Int
+  createdAt DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@index([userId])
+  @@map("resume_versions")
+}
+
+model Reminder {
+  id            String       @id @default(cuid())
+  applicationId String?
+  userId        String
+  message       String
+  type          ReminderType
+  remindAt      DateTime
+  isSent        Boolean      @default(false)
+  isDismissed   Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([remindAt, isSent])
+  @@index([userId])
+  @@map("reminders")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  linkTo    String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model EmailTemplate {
+  id       String @id @default(cuid())
+  userId   String
+  name     String
+  subject  String
+  body     String
+  category String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_templates")
+}
+
+model Attachment {
+  id            String   @id @default(cuid())
+  applicationId String
+  fileName      String
+  fileUrl       String
+  fileSize      Int
+  fileType      String
+  createdAt     DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("attachments")
+}
+
+model VerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email, code])
+  @@map("verification_codes")
+}
+
+model PasswordResetCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email, code])
+  @@map("password_reset_codes")
+}
+
+model JobDescription {
+  id            String   @id @default(cuid())
+  userId        String
+  applicationId String?  @unique
+  companyName   String
+  roleTitle     String
+  jobUrl        String?
+  content       String
+  structured    String?  // AI-restructured version (markdown)
+  keywords      String[] // Extracted key requirements
+  skills        String[] // Technical skills
+  experience    String[] // Experience requirements
+  education     String[] // Education requirements
+  isArchived    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([companyName])
+  @@map("job_descriptions")
+}
+

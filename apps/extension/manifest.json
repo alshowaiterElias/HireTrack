@@ -1,0 +1,68 @@
+{
+  "manifest_version": 3,
+  "name": "HireTrack — Job Saver",
+  "version": "1.0.0",
+  "description": "Save jobs from LinkedIn and YemenHR to your HireTrack job-tracking board with one click. Automatically captures job title, company, location, description, and salary.",
+
+  "permissions": ["storage", "tabs", "activeTab", "scripting"],
+
+  "host_permissions": [
+    "https://app.hiretrack.io/*",
+    "https://api.hiretrack.io/*",
+    "http://localhost:3000/*",
+    "http://localhost:4000/*",
+    "https://www.linkedin.com/*",
+    "https://linkedin.com/*",
+    "https://yemenhr.com/*",
+    "https://www.yemenhr.com/*"
+  ],
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "HireTrack Job Saver",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.linkedin.com/jobs/view/*",
+        "https://linkedin.com/jobs/view/*",
+        "https://www.linkedin.com/jobs/collections/*",
+        "https://www.linkedin.com/jobs/search/*"
+      ],
+      "js": ["content-linkedin.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://yemenhr.com/jobs/*",
+        "https://www.yemenhr.com/jobs/*"
+      ],
+      "js": ["content-yemenhr.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://localhost:3000/*",
+        "https://app.hiretrack.io/*"
+      ],
+      "js": ["content-hiretrack.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
