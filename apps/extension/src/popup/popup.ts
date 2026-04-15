@@ -216,8 +216,29 @@ function showView(view: 'auth-view' | 'no-job-view' | 'main-view' | 'success-vie
 // ─── Init ──────────────────────────────────────────────────────
 async function init() {
   const stored = await chrome.storage.local.get(['token', 'apiUrl', 'webUrl']);
-  if (stored.apiUrl) apiUrl = stored.apiUrl;
-  if (stored.webUrl) webUrl = stored.webUrl;
+
+  // ── Migrate stale localhost values to production ──────────────
+  const PROD_API = 'https://hiretrack-tjg7.onrender.com';
+  const PROD_WEB = 'https://hire-track-web.vercel.app';
+  const storedApi = stored.apiUrl as string | undefined;
+  const storedWeb = stored.webUrl as string | undefined;
+
+  if (storedApi && !storedApi.includes('localhost')) {
+    apiUrl = storedApi;
+  } else {
+    // Stale or missing — write production value to storage
+    apiUrl = PROD_API;
+    await chrome.storage.local.set({ apiUrl: PROD_API });
+  }
+
+  if (storedWeb && !storedWeb.includes('localhost')) {
+    webUrl = storedWeb;
+  } else {
+    // Stale or missing — write production value to storage
+    webUrl = PROD_WEB;
+    await chrome.storage.local.set({ webUrl: PROD_WEB });
+  }
+
   if (stored.token) token = stored.token;
 
   el<HTMLInputElement>('api-url-input').value = apiUrl;
@@ -423,7 +444,8 @@ async function handleLogin(e: Event) {
     const tempClient = new HireTrackApiClient(apiUrl, '');
     const result = await tempClient.login(email, password);
     token = result.accessToken;
-    await chrome.storage.local.set({ token, apiUrl });
+    await chrome.storage.local.set({ token, apiUrl, webUrl: 'https://hire-track-web.vercel.app' });
+    webUrl = 'https://hire-track-web.vercel.app';
     client = new HireTrackApiClient(apiUrl, token);
     await loadConnectedState();
   } catch (err: any) {
@@ -490,7 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = el<HTMLInputElement>('api-url-input').value.trim();
     if (!url) return;
     apiUrl = url;
-    await chrome.storage.local.set({ apiUrl });
+    await chrome.storage.local.set({ apiUrl, webUrl });
     if (token) client = new HireTrackApiClient(apiUrl, token);
     show('toast-api'); setTimeout(() => hide('toast-api'), 2000);
   });

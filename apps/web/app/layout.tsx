@@ -15,6 +15,14 @@ export const metadata: Metadata = {
     "job pipeline",
   ],
   authors: [{ name: "HireTrack" }],
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/icons/icon-192.png",
+    shortcut: "/icon.svg",
+  },
   openGraph: {
     title: "HireTrack — Your Job Search Command Center",
     description:
@@ -33,7 +41,9 @@ export default function RootLayout({
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#7c3aed" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="alternate icon" href="/icons/icon-192.png" type="image/png" />
+        <meta name="theme-color" content="#6d28d9" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="HireTrack" />
