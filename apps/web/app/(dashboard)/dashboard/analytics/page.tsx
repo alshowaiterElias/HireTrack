@@ -67,9 +67,66 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="analytics-page">
-        <div className="analytics-header">
-          <h2>{t.analytics.title} 📊</h2>
-          <p>{t.common.loading}</p>
+        {/* Header shimmer */}
+        <div className="analytics-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div className="skeleton" style={{ height: 28, width: 200, marginBottom: 8 }} />
+            <div className="skeleton" style={{ height: 14, width: 280 }} />
+          </div>
+          <div className="skeleton" style={{ height: 32, width: 160, borderRadius: "var(--radius-md)" }} />
+        </div>
+
+        {/* Stat cards shimmer */}
+        <div className="an-stats-grid">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="an-stat-card">
+              <div className="skeleton" style={{ height: 12, width: 90, marginBottom: 10 }} />
+              <div className="skeleton" style={{ height: 40, width: 64, marginBottom: 8 }} />
+              <div className="skeleton" style={{ height: 11, width: 110 }} />
+            </div>
+          ))}
+        </div>
+
+        {/* Two column row */}
+        <div className="an-row-2">
+          {[1, 2].map((i) => (
+            <div key={i} className="an-card">
+              <div className="skeleton" style={{ height: 16, width: 140, marginBottom: 16 }} />
+              {[1, 2, 3, 4, 5].map((j) => (
+                <div key={j} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
+                  <div className="skeleton" style={{ height: 12, width: 80, flexShrink: 0 }} />
+                  <div className="skeleton" style={{ height: 10, flex: 1 }} />
+                  <div className="skeleton" style={{ height: 12, width: 24, flexShrink: 0 }} />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Wide chart shimmer */}
+        <div className="an-card">
+          <div className="skeleton" style={{ height: 16, width: 200, marginBottom: 16 }} />
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-end", height: 120 }}>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="skeleton" style={{ flex: 1, height: `${30 + Math.random() * 70}%`, borderRadius: 4 }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom two column row */}
+        <div className="an-row-2">
+          {[1, 2].map((i) => (
+            <div key={i} className="an-card">
+              <div className="skeleton" style={{ height: 16, width: 140, marginBottom: 16 }} />
+              {[1, 2, 3].map((j) => (
+                <div key={j} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
+                  <div className="skeleton" style={{ height: 12, width: 90, flexShrink: 0 }} />
+                  <div className="skeleton" style={{ height: 10, flex: 1 }} />
+                  <div className="skeleton" style={{ height: 12, width: 36, flexShrink: 0 }} />
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     );

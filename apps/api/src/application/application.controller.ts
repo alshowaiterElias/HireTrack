@@ -455,9 +455,11 @@ export class ApplicationController {
     if (!attachment) throw new Error('Attachment not found');
 
     if (this.storage.isUsingR2) {
-      // Redirect browser to a fresh 7-day presigned R2 URL
+      // Return JSON so the frontend can open the URL directly.
+      // res.redirect() is broken with fetch() + Authorization headers
+      // (browser silently drops cross-origin redirects).
       const url = await this.storage.getSignedDownloadUrl(attachment.fileUrl);
-      return res.redirect(url);
+      return res.json({ url, fileName: attachment.fileName });
     }
 
     // Local disk fallback

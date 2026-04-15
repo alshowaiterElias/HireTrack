@@ -1,13 +1,13 @@
 // HireTrack web app token bridge
 // Runs on localhost:3000/* and app.hiretrack.com/*
 // Allows the web app to push auth tokens to the extension seamlessly
-export {};
+export { };
 
 
 function trySync() {
   try {
     const token = localStorage.getItem('hiretrack_ext_token');
-    const apiUrl = localStorage.getItem('hiretrack_ext_apiUrl') ?? 'http://localhost:4000';
+    const apiUrl = localStorage.getItem('hiretrack_ext_apiUrl') ?? 'https://hiretrack-tjg7.onrender.com';
     const webUrl = window.location.origin;
 
     if (token) {
@@ -36,7 +36,7 @@ window.addEventListener('message', (event) => {
 
     // Then forward to extension storage
     chrome.runtime.sendMessage(
-      { type: 'SAVE_TOKEN', token, apiUrl: apiUrl ?? 'http://localhost:4000', webUrl: window.location.origin },
+      { type: 'SAVE_TOKEN', token, apiUrl: apiUrl ?? 'https://hiretrack-tjg7.onrender.com', webUrl: window.location.origin },
       () => {
         window.postMessage({ type: 'HIRETRACK_EXT_CONNECTED', success: true }, window.location.origin);
       },

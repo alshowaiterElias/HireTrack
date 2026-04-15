@@ -1,6 +1,6 @@
 // Background Service Worker — Manifest V3
 // Handles: token storage, badge updates, message relay
-export {};
+export { };
 
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -9,8 +9,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       chrome.storage.local.set(
         {
           token: message.token,
-          apiUrl: message.apiUrl ?? 'http://localhost:4000',
-          webUrl: message.webUrl ?? 'http://localhost:3000',
+          apiUrl: message.apiUrl ?? 'https://hiretrack-tjg7.onrender.com',
+          webUrl: message.webUrl ?? 'https://hire-track-web.vercel.app',
         },
         () => sendResponse({ success: true }),
       );

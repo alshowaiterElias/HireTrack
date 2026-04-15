@@ -9,6 +9,8 @@
   "host_permissions": [
     "https://app.hiretrack.io/*",
     "https://api.hiretrack.io/*",
+    "https://hire-track-web.vercel.app/*",
+    "https://hiretrack-tjg7.onrender.com/*",
     "http://localhost:3000/*",
     "http://localhost:4000/*",
     "https://www.linkedin.com/*",
@@ -53,6 +55,7 @@
     {
       "matches": [
         "http://localhost:3000/*",
+        "https://hire-track-web.vercel.app/*",
         "https://app.hiretrack.io/*"
       ],
       "js": ["content-hiretrack.js"],

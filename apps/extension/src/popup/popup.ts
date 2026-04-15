@@ -8,7 +8,7 @@ function extractLinkedInJob(): any {
   // Helper: try selectors in order, return first match with non-empty text
   function q(sels: string[]): Element | null {
     for (const s of sels) {
-      try { const e = document.querySelector(s); if (e?.textContent?.trim()) return e; } catch {}
+      try { const e = document.querySelector(s); if (e?.textContent?.trim()) return e; } catch { }
     }
     return null;
   }
@@ -196,8 +196,8 @@ function detectSite(tabUrl: string): 'linkedin' | 'yemenhr' | null {
 }
 
 // ─── State ─────────────────────────────────────────────────────
-let apiUrl = 'http://localhost:4000';
-let webUrl = 'http://localhost:3000';
+let apiUrl = 'https://hiretrack-tjg7.onrender.com';
+let webUrl = 'https://hire-track-web.vercel.app';
 let token: string | null = null;
 let client: HireTrackApiClient | null = null;
 let jobData: JobData | null = null;
@@ -344,7 +344,7 @@ function populateForm() {
   el<HTMLInputElement>('job-url-hidden').value = jobData.jobUrl;
 
   let hostname = jobData.jobUrl;
-  try { hostname = new URL(jobData.jobUrl).hostname; } catch {}
+  try { hostname = new URL(jobData.jobUrl).hostname; } catch { }
   el('url-display').textContent = hostname;
 
   const badge = el('source-badge');
@@ -419,7 +419,7 @@ async function handleLogin(e: Event) {
   btn.textContent = 'Signing in…';
 
   try {
-    apiUrl = el<HTMLInputElement>('api-url-input').value.trim() || 'http://localhost:4000';
+    apiUrl = el<HTMLInputElement>('api-url-input').value.trim() || 'https://hiretrack-tjg7.onrender.com';
     const tempClient = new HireTrackApiClient(apiUrl, '');
     const result = await tempClient.login(email, password);
     token = result.accessToken;
@@ -449,8 +449,8 @@ async function handleSave(e: Event) {
 
   const updatedJob: JobData = {
     ...jobData,
-    title:    el<HTMLInputElement>('role-title').value.trim(),
-    company:  el<HTMLInputElement>('company-name').value.trim(),
+    title: el<HTMLInputElement>('role-title').value.trim(),
+    company: el<HTMLInputElement>('company-name').value.trim(),
     location: el<HTMLInputElement>('location-input').value.trim(),
     workType: (el<HTMLSelectElement>('work-type').value as JobData['workType']) || undefined,
     salaryMin: parseFloat(el<HTMLInputElement>('salary-min').value) || undefined,

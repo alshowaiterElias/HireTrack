@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HireTrack</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
+
 <body>
 
   <!-- ─── Header ────────────────────────────────────────────── -->
@@ -24,7 +26,7 @@
   <div id="settings-panel" class="settings-panel hidden">
     <p class="panel-label">API Base URL</p>
     <div class="input-row">
-      <input id="api-url-input" type="text" class="ht-input" placeholder="http://localhost:4000" />
+      <input id="api-url-input" type="text" class="ht-input" placeholder="https://hiretrack-tjg7.onrender.com" />
       <button id="api-url-save" class="btn btn-sm">Save</button>
     </div>
     <div id="toast-api" class="toast hidden">✓ Saved</div>
@@ -43,18 +45,20 @@
     <form id="login-form" class="auth-form" autocomplete="on">
       <div class="form-group">
         <label class="form-label" for="login-email">Email</label>
-        <input id="login-email" type="email" class="ht-input" placeholder="you@example.com" required autocomplete="email" />
+        <input id="login-email" type="email" class="ht-input" placeholder="you@example.com" required
+          autocomplete="email" />
       </div>
       <div class="form-group">
         <label class="form-label" for="login-password">Password</label>
-        <input id="login-password" type="password" class="ht-input" placeholder="••••••••" required autocomplete="current-password" />
+        <input id="login-password" type="password" class="ht-input" placeholder="••••••••" required
+          autocomplete="current-password" />
       </div>
       <div id="login-error" class="error-msg hidden"></div>
       <button id="login-btn" type="submit" class="btn btn-primary btn-full">Sign In</button>
     </form>
 
     <p class="auth-hint">
-      Already connected via web app?<br/>
+      Already connected via web app?<br />
       <a id="open-web-link" href="#" class="link">Open HireTrack settings →</a>
     </p>
   </div>
@@ -181,4 +185,5 @@
 
   <script src="popup.js"></script>
 </body>
+
 </html>

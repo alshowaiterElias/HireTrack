@@ -35,7 +35,7 @@ class ApiClient {
       });
     } catch {
       throw new Error(
-        `Cannot connect to API server. Make sure the backend is running on port 4000.`
+        `Cannot connect to API server at ${this.baseUrl}. Check your network or backend deployment.`
       );
     }
 

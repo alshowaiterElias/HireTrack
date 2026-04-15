@@ -35,6 +35,7 @@ export default function ApplicationDetailPage() {
   const [contactForm, setContactForm] = useState({ name: "", role: "", email: "", linkedinUrl: "", phone: "", notes: "" });
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const attachRef = useRef<HTMLInputElement>(null);
 
   // View/Edit popups
@@ -143,23 +144,43 @@ export default function ApplicationDetailPage() {
 
   const handleUploadAttachment = async (file: File) => {
     if (!token) return;
-    setSaving(true);
+    setUploading(true);
     try {
       const attachment = await api.uploadAttachment(appId, file, token);
       setApp((prev: any) => ({ ...prev, attachments: [attachment, ...(prev.attachments || [])] }));
-    } catch {} finally { setSaving(false); }
+    } catch {} finally { setUploading(false); }
   };
 
   const handleDownloadAttachment = async (attachId: string, fileName: string) => {
     if (!token) return;
-    const url = api.getAttachmentDownloadUrl(appId, attachId);
-    const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    const blob = await response.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = fileName;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    try {
+      const url = api.getAttachmentDownloadUrl(appId, attachId);
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) throw new Error("Download failed");
+      const data = await response.json();
+      if (data.url) {
+        // R2 presigned URL — open directly (self-authenticating, no auth header needed)
+        const a = document.createElement("a");
+        a.href = data.url;
+        a.download = data.fileName || fileName;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        // Local disk fallback: stream blob
+        const blob = await response.clone().blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(blobUrl);
+        a.remove();
+      }
+    } catch { /* silently ignore download errors */ }
   };
 
   const confirmDeleteItem = async () => {
@@ -474,10 +495,27 @@ export default function ApplicationDetailPage() {
           <div>
             <div className="app-section-title">
               <span>Attachments</span>
-              <button className="btn btn-primary btn-sm" onClick={() => attachRef.current?.click()}>+ Upload File</button>
+              <button className="btn btn-primary btn-sm" onClick={() => attachRef.current?.click()} disabled={uploading}>
+                {uploading ? (
+                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />
+                    Uploading...
+                  </span>
+                ) : "+ Upload File"}
+              </button>
               <input ref={attachRef} type="file" hidden onChange={(e) => { if (e.target.files?.[0]) handleUploadAttachment(e.target.files[0]); e.target.value = ""; }} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+              {uploading && (
+                <div className="app-item" style={{ opacity: 0.6 }}>
+                  <div className="app-item-header">
+                    <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                      <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid var(--accent-primary)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />
+                      <span className="app-item-title" style={{ color: "var(--text-muted)" }}>Uploading file...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               {(app.attachments || []).map((a: any) => (
                 <div key={a.id} className="app-item">
                   <div className="app-item-header">
@@ -486,13 +524,15 @@ export default function ApplicationDetailPage() {
                       <span className="app-item-meta" style={{ marginLeft: 8 }}>{(a.fileSize / 1024).toFixed(1)} KB • {formatShortDate(a.createdAt)}</span>
                     </div>
                     <div style={{ display: "flex", gap: "var(--space-2)" }}>
-                      <button className="btn btn-secondary btn-sm" style={{ fontSize: "var(--text-xs)", padding: "2px 8px" }} onClick={() => handleDownloadAttachment(a.id, a.fileName)}>⬇</button>
+                      <button className="btn btn-secondary btn-sm" style={{ fontSize: "var(--text-xs)", padding: "2px 8px" }} onClick={() => handleDownloadAttachment(a.id, a.fileName)}>⬇ Download</button>
                       <button className="app-item-delete" style={{ opacity: 1 }} onClick={() => setDeleteConfirm({ type: "attachment", id: a.id, label: a.fileName })}>✕</button>
                     </div>
                   </div>
                 </div>
               ))}
-              {(app.attachments?.length || 0) === 0 && <p style={{ color: "var(--text-muted)", fontSize: "var(--text-sm)" }}>No attachments yet. Upload files like offer letters, contracts, etc.</p>}
+              {(app.attachments?.length || 0) === 0 && !uploading && (
+                <p style={{ color: "var(--text-muted)", fontSize: "var(--text-sm)" }}>No attachments yet. Upload files like offer letters, contracts, etc.</p>
+              )}
             </div>
           </div>
         )}

@@ -21,6 +21,7 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState("");
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
+  const [signingOut, setSigningOut] = useState(false);
   const [extConnected, setExtConnected] = useState(false);
   const [extConnecting, setExtConnecting] = useState(false);
   const token = session?.accessToken as string;
@@ -59,10 +60,10 @@ export default function SettingsPage() {
     setExtConnecting(true);
     // Write to localStorage immediately so content script can pick it up
     localStorage.setItem("hiretrack_ext_token", token);
-    localStorage.setItem("hiretrack_ext_apiUrl", "http://localhost:4000");
+    localStorage.setItem("hiretrack_ext_apiUrl", "https://hiretrack-tjg7.onrender.com");
     // Also send postMessage so content script can forward to chrome.storage
     window.postMessage(
-      { type: "HIRETRACK_EXT_CONNECT", token, apiUrl: "http://localhost:4000" },
+      { type: "HIRETRACK_EXT_CONNECT", token, apiUrl: "https://hiretrack-tjg7.onrender.com" },
       window.location.origin
     );
     // If no CONNECTED reply within 3s, the extension isn't installed — show error gracefully
@@ -385,10 +386,17 @@ export default function SettingsPage() {
           <div style={{ display: "flex", gap: "var(--space-3)" }}>
             <button
               className="btn btn-sm"
-              onClick={() => signOut({ callbackUrl: "/" })}
-              style={{ background: "transparent", border: "1px solid var(--danger)", color: "var(--danger)" }}
+              onClick={async () => {
+                setSigningOut(true);
+                await signOut({ callbackUrl: "/" });
+              }}
+              disabled={signingOut}
+              style={{ background: "transparent", border: "1px solid var(--danger)", color: "var(--danger)", display: "flex", alignItems: "center", gap: 6 }}
             >
-              {t.settings.signOut}
+              {signingOut && (
+                <span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />
+              )}
+              {signingOut ? "Signing out..." : t.settings.signOut}
             </button>
             <button
               className="btn btn-sm"

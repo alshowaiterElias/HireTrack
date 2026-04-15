@@ -84,15 +84,29 @@ export default function ResumesPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!response.ok) throw new Error("Download failed");
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
+      const data = await response.json();
+      if (data.url) {
+        // R2 presigned URL — open directly in a new tab (self-authenticating)
+        const a = document.createElement("a");
+        a.href = data.url;
+        a.download = fileName;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        // Local disk fallback: response is a blob stream
+        const blob = await response.clone().blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      }
     } catch {
       setError("Download failed. Please try again.");
     }

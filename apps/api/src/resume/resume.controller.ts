@@ -58,12 +58,14 @@ export class ResumeController {
     const resume = await this.resumeService.findOne(id, req.user.sub);
 
     if (this.storage.isUsingR2) {
-      // Generate a fresh presigned URL and redirect the browser to it
+      // Return the presigned URL as JSON — the frontend opens it directly.
+      // Do NOT redirect: fetch() silently drops cross-origin redirects that carry
+      // Authorization headers, resulting in an empty/blocked response.
       const url = await this.storage.getSignedDownloadUrl(resume.fileUrl);
-      return res.redirect(url);
+      return res.json({ url });
     }
 
-    // Local disk fallback
+    // Local disk fallback: stream the file
     const stream = this.storage.getLocalReadStream(resume.fileUrl);
     if (!stream) {
       throw new BadRequestException('File not found on server');
